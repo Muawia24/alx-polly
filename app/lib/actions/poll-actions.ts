@@ -20,7 +20,7 @@ export async function createPoll(formData: FormData) {
     error: userError,
   } = await supabase.auth.getUser();
   if (userError) {
-    return { error: userError.message };
+    return { error: "Supabase Server error" };
   }
   if (!user) {
     return { error: "You must be logged in to create a poll." };
@@ -98,6 +98,19 @@ export async function submitVote(pollId: string, optionIndex: number) {
 // DELETE POLL
 export async function deletePoll(id: string) {
   const supabase = await createClient();
+
+  // Get user from session
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) {
+    return { error: "Supabase Server error" };
+  }
+  if (!user) {
+    return { error: "You must be logged in to delete a poll." };
+  }
+  
   const { error } = await supabase.from("polls").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/polls");
@@ -121,7 +134,7 @@ export async function updatePoll(pollId: string, formData: FormData) {
     error: userError,
   } = await supabase.auth.getUser();
   if (userError) {
-    return { error: userError.message };
+    return { error: "Supabase Server error" };
   }
   if (!user) {
     return { error: "You must be logged in to update a poll." };

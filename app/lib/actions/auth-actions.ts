@@ -12,6 +12,18 @@ const redisClient = new Redis();
     duration: 60 * 15, 
   });
 
+  export async function isEmailVerified() {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      return false;
+    }
+    const isVerified = 
+      !!data.user.email_confirmed_at || !!data.user.confirmed_at;
+
+    return isVerified;
+  }
+
 export async function login(data: LoginFormData) {
   if (!data.email || !data.password) {
     return { error: "Email and password are required" };
@@ -52,7 +64,7 @@ export async function register(data: RegisterFormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "Supabase Server error" };
   }
 
   // Success: no error
@@ -63,7 +75,7 @@ export async function logout() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
   if (error) {
-    return { error: error.message };
+    return { error: "Supabase Server error" };
   }
   return { error: null };
 }
