@@ -2,8 +2,27 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { LoginFormData, RegisterFormData } from '../types';
+import { RateLimiterRedis } from 'rate-limiter-flexible';
+import Redis from 'ioredis';
+
+const redisClient = new Redis();
+  const rateLimiter = new RateLimiterRedis({
+    storeClient: redisClient,
+    points: 5,
+    duration: 60 * 15, 
+  });
 
 export async function login(data: LoginFormData) {
+  if (!data.email || !data.password) {
+    return { error: "Email and password are required" };
+  }
+
+  try {
+    await rateLimiter.consume(data.email);
+  } catch (err) {
+    return { error: "Too many login attempts. Please try again later." };
+  }
+  
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -12,7 +31,7 @@ export async function login(data: LoginFormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "Wrong email or password" };
   }
 
   // Success: no error
